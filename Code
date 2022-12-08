@@ -1,0 +1,161 @@
+// Global Variables
+let canvas;
+let ctx;
+let xpos;
+let ypos;
+let bird;
+let gravity;
+let pipes;
+let score;
+let gameover;
+
+// Setup
+function setup() {
+    canvas = document.getElementById("canvas");
+    ctx = canvas.getContext("2d");
+    xpos = 0;
+    ypos = canvas.height/2;
+    bird = new Bird();
+    gravity = 0.2;
+    pipes = [];
+    score = 0;
+    gameover = false;
+    pipes.push(new Pipe());
+
+    // Event Listeners
+    document.addEventListener("keydown", keyDown);
+    document.addEventListener("click", mouseClick);
+    document.addEventListener("touchstart", touchStart);
+
+    // Start the game
+    window.requestAnimationFrame(draw);
+}
+
+// Draw
+function draw() {
+    // Clear Screen
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw Pipes
+    for (let i = 0; i < pipes.length; i++) {
+        pipes[i].draw();
+    }
+
+    // Draw Bird
+    bird.draw();
+
+    // Draw Score
+    ctx.fillStyle = "#000000";
+    ctx.font = "20px Arial";
+    ctx.fillText("Score: " + score, 10, 25);
+
+    // Move Pipes
+    for (let i = 0; i < pipes.length; i++) {
+        pipes[i].update();
+    }
+
+    // Apply Gravity
+    bird.yvel += gravity;
+    ypos += bird.yvel;
+
+    // Detect Collision
+    for (let i = 0; i < pipes.length; i++) {
+        if (pipes[i].collides(bird.x, bird.y)) {
+            gameover = true;
+            break;
+        }
+    }
+
+    // Game Over
+    if (ypos > canvas.height || ypos < 0 || gameover) {
+        gameover = true;
+        ctx.fillText("Game Over!", canvas.width/2 - 50, canvas.height/2);
+    }
+
+    // Generate a new pipe
+    if (xpos % 500 == 0) {
+        pipes.push(new Pipe());
+    }
+
+    // Increase xpos
+    xpos++;
+
+    // Keep Drawing
+    if (!gameover) {
+        window.requestAnimationFrame(draw);
+    }
+}
+
+// KeyDown Event
+function keyDown(e) {
+    if (e.keyCode == 32) {
+        bird.up();
+    }
+}
+
+// MouseClick Event
+function mouseClick() {
+    bird.up();
+}
+
+// TouchStart Event
+function touchStart() {
+    bird.up();
+}
+
+// Bird Class
+class Bird {
+    constructor() {
+        this.x = 40;
+        this.y = canvas.height/2;
+        this.yvel = 0;
+        this.size = 25;
+    }
+
+    draw() {
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+    }
+
+    up() {
+        this.yvel = -3.5;
+    }
+}
+
+// Pipe Class
+class Pipe {
+    constructor() {
+        this.x = canvas.width;
+        this.width = 20;
+        this.gap = 150;
+        this.top = Math.floor(Math.random() * (canvas.height - this.gap));
+        this.bottom = this.top + this.gap;
+    }
+
+    draw() {
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(this.x, 0, this.width, this.top);
+        ctx.fillRect(this.x, this.bottom, this.width, canvas.height - this.bottom);
+    }
+
+    update() {
+        this.x--;
+        if (this.x + this.width < bird.x && !this.passed) {
+            score++;
+            this.passed = true;
+        }
+    }
+
+    collides(x, y) {
+        if (x + bird.size > this.x && x < this.x + this.width) {
+            if (y < this.top || y + bird.size > this.bottom) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+// Start the game
+setup();
